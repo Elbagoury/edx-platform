@@ -37,6 +37,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.template.response import TemplateResponse
 
+from commerce.models import CommerceConfiguration
+
 from ratelimitbackend.exceptions import RateLimitException
 
 
@@ -502,6 +504,7 @@ def complete_course_mode_info(course_id, enrollment, modes=None):
     # if verified is an option.
     if CourseMode.VERIFIED in modes and enrollment.mode in CourseMode.UPSELL_TO_VERIFIED_MODES:
         mode_info['show_upsell'] = True
+        mode_info['verified_sku'] = modes['verified'].sku
         # if there is an expiration date, find out how long from now it is
         if modes['verified'].expiration_datetime:
             today = datetime.datetime.now(UTC).date()
@@ -703,6 +706,8 @@ def dashboard(request):
     else:
         redirect_message = ''
 
+    config = CommerceConfiguration.current()
+
     context = {
         'enrollment_message': enrollment_message,
         'redirect_message': redirect_message,
@@ -735,6 +740,9 @@ def dashboard(request):
         'course_programs': course_programs,
         'disable_courseware_js': True,
         'xseries_credentials': xseries_credentials,
+        'use_ecommerce_payment_flow': config.checkout_on_ecommerce_service,
+        'ecommerce_payment_page': urljoin(settings.ECOMMERCE_PUBLIC_URL_ROOT,
+                                          config.single_course_checkout_page),
     }
 
     return render_to_response('dashboard.html', context)
