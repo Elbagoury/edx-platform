@@ -39,6 +39,7 @@ from openedx.core.lib.courses import course_image_url
             location.href = "${reg_then_add_to_cart_link}";
         }
       };
+
       $("#add_to_cart_post").click(function(event){
         $.ajax({
           url: "${reverse('add_course_to_cart', args=[course.id.to_deprecated_string()])}",
@@ -154,6 +155,15 @@ from openedx.core.lib.courses import course_image_url
             reg_href = reg_then_add_to_cart_link
             reg_element_id = "reg_then_add_to_cart"
           %>
+          <% if ecommerce_checkout:
+              if user.is_authenticated():
+                reg_href = ecommerce_checkout_link
+                reg_element_id = 'add_to_ecomm_cart'
+              else:
+                reg_href = reg_then_add_to_cart_link
+                reg_element_id = "reg_then_add_to_ecomm_cart"
+          %>
+          <h1>
           <a href="${reg_href}" class="add-to-cart" id="${reg_element_id}">
             ${_("Add {course_name} to Cart <span>({price} USD)</span>")\
               .format(course_name=course.display_number_with_default, price=course_price)}
