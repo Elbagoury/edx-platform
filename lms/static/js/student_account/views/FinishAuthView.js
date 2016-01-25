@@ -52,7 +52,7 @@
                     courseId: $.url( '?course_id' ),
                     courseMode: $.url( '?course_mode' ),
                     emailOptIn: $.url( '?email_opt_in' ),
-                    basket_url: $.url( '?basket_url' )
+                    checkout_url: $.url( '?checkout_url' )
                 };
                 for (var key in queryParams) {
                     if (queryParams[key]) {
@@ -64,7 +64,7 @@
                 this.courseMode = queryParams.courseMode;
                 this.emailOptIn = queryParams.emailOptIn;
                 this.nextUrl = this.urls.defaultNextUrl;
-                this.basket_url = queryParams.basket_url;
+                this.checkout_url = queryParams.checkout_url;
                 if (queryParams.next) {
                     // Ensure that the next URL is internal for security reasons
                     if ( ! window.isExternal( queryParams.next ) ) {
@@ -149,7 +149,7 @@
                     this.updateTaskDescription(gettext("Adding the selected course to your cart"));
                     shoppingCartInterface.addCourseToCart( this.courseId );
                 } else if ( this.enrollmentAction === 'add_to_ecomm_cart' && this.courseId) {
-                    this.redirect( this.basket_url );
+                    this.redirect( this.checkout_url );
                 } else {
                     // Otherwise, redirect the user to the next page.
                     this.redirect( redirectUrl );
