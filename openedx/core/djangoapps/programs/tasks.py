@@ -4,10 +4,110 @@ This file contains celery tasks for programs-related functionality.
 
 from celery import task
 from celery.utils.log import get_task_logger  # pylint: disable=no-name-in-module, import-error
+from django.contrib.auth.models import User
+from edx_rest_api_client.client import EdxRestApiClient
 
 from lms.djangoapps.certificates.api import get_certificates_for_user
 
+from openedx.core.djangoapps.credentials.models import CredentialsApiConfig
+from openedx.core.djangoapps.credentials.utils import get_user_credentials
+from openedx.core.djangoapps.programs.models import ProgramsApiConfig
+from openedx.core.lib.token_utils import get_id_token
+
+
 LOGGER = get_task_logger(__name__)
+
+
+def get_api_client(api_config, student):
+    """
+    Create and configure an API client for authenticated HTTP requests.
+
+    Args:
+        api_config: ProgramsApiConfig or CredentialsApiConfig object
+        student: User object as whom to authenticate to the API
+
+    Returns:
+        EdxRestApiClient
+
+    """
+    id_token = get_id_token(student, api_config.OAUTH2_CLIENT_NAME)
+    return EdxRestApiClient(api_config.internal_api_url, jwt=id_token)
+
+
+def get_completed_courses(student):
+    """
+    Determine which courses have been completed by the user.
+
+    Args:
+        student:
+            User object representing the student
+
+    Returns:
+        iterable of dicts with structure {'course_id': course_key, 'mode': cert_type}
+
+    """
+    all_certs = get_certificates_for_user(student.username)
+    return [
+        {'course_id': cert['course_key'], 'mode': cert['type']}
+        for cert in all_certs
+        if cert['status'] in ('downloadable', 'generating')  # TODO move this into the certs API call
+    ]
+
+
+def get_completed_programs(client, course_certificates):
+    """
+    Given a set of completed courses, determine which programs are completed.
+
+    Args:
+        client:
+            programs API client (EdxRestApiClient)
+        course_certificates:
+            iterable of dicts with structure {'course_id': course_key, 'mode': cert_type}
+
+    Returns:
+        list of program ids
+
+    """
+    return client.programs.complete.post(course_certificates)
+
+
+def get_awarded_certificate_programs(student):
+    """
+    Find the ids of all the programs for which the student has already been awarded
+    a certificate.
+
+    Args:
+        student:
+            User object representing the student
+
+    Returns:
+        ids of the programs for which the student has been awarded a certificate
+
+    """
+    return [
+        credential['credential']['program_id']
+        for credential in get_user_credentials(student)
+        if 'program_id' in credential['credential'] and credential['status'] == 'awarded'
+    ]
+
+
+def award_program_certificate(client, student, program_id):
+    """
+    Issue a new certificate of completion to the given student for the given program.
+
+    Args:
+        client:
+            credentials API client (EdxRestApiClient)
+        student:
+            User object representing the student
+        program_id:
+            id of the completed program
+
+    Returns:
+        None
+
+    """
+    client.user_credentials.post({'program_id': program_id, 'username': student.username})
 
 
 @task
@@ -28,28 +128,33 @@ def award_program_certificates(username):
     TODO: this is shelled out and incomplete for now.
     """
 
+    student = User.objects.get(username=username)
+
     # fetch the set of all course runs for which the user has earned a certificate
-    LOGGER.debug('fetching all completed courses for user %s', username)
-    user_certs = get_certificates_for_user(username)
-    course_certs = [
-        {'course_id': uc['course_id'], 'mode': uc['mode']}
-        for uc in user_certs
-        if uc['status'] in ('downloadable', 'generating')
-    ]
+    course_certs = get_completed_courses(student)
 
     # invoke the Programs API completion check endpoint to identify any programs
     # that are satisfied by these course completions
-    LOGGER.debug('determining completed programs for courses: %r', course_certs)
-    program_ids = []  # TODO
+    programs_client = get_api_client(ProgramsApiConfig.current(), student)
+    program_ids = get_completed_programs(programs_client, course_certs)
 
     # determine which program certificates the user has already been awarded, if
     # any, and remove those, since they already exist.
-    LOGGER.debug('fetching existing program certificates for %s', username)
-    existing_program_ids = []  # TODO
+    existing_program_ids = get_awarded_certificate_programs(student)
+
     new_program_ids = list(set(program_ids) - set(existing_program_ids))
 
     # generate a new certificate for each of the remaining programs.
-    LOGGER.debug('generating new program certificates for %s in programs: %r', username, new_program_ids)
-    for program_id in new_program_ids:
-        LOGGER.debug('calling credentials service to issue certificate for user %s in program %s', username, program_id)
-        # TODO
+    if new_program_ids:
+        LOGGER.debug('generating new program certificates for %s in programs: %r', username, new_program_ids)
+        credentials_client = get_api_client(
+            CredentialsApiConfig.current(),
+            User.objects.get(username='FIXME-NO-SERVICE-USER')
+        )
+        for program_id in new_program_ids:
+            LOGGER.debug(
+                'calling credentials service to issue certificate for user %s in program %s',
+                username,
+                program_id,
+            )
+            award_program_certificate(credentials_client, student, program_id)
