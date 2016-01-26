@@ -3,9 +3,7 @@ Views for the course_mode module
 """
 
 import decimal
-from urlparse import urljoin
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -19,7 +17,7 @@ from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from xmodule.modulestore.django import modulestore
 
-from commerce.models import CommerceConfiguration
+from commerce.utils import EcommerceService
 from course_modes.models import CourseMode
 from courseware.access import has_access
 from edxmako.shortcuts import render_to_response
@@ -143,10 +141,8 @@ class ChooseModeView(View):
             context["verified_description"] = verified_mode.description
 
             if verified_mode.sku:
-                config = CommerceConfiguration.current()
-                context["use_ecommerce_payment_flow"] = config.checkout_on_ecommerce_service
-                context["ecommerce_payment_page"] = urljoin(settings.ECOMMERCE_PUBLIC_URL_ROOT,
-                                                            config.single_course_checkout_page)
+                context["use_ecommerce_payment_flow"] = EcommerceService().is_enabled()
+                context["ecommerce_payment_page"] = EcommerceService().payment_page_url()
                 context["sku"] = verified_mode.sku
 
         return render_to_response("course_modes/choose.html", context)

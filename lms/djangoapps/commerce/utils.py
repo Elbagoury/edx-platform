@@ -1,6 +1,10 @@
 """Utilities to assist with commerce tasks."""
 import logging
+from urlparse import urljoin
 
+from django.conf import settings
+
+from commerce.models import CommerceConfiguration
 
 log = logging.getLogger(__name__)
 
@@ -32,3 +36,15 @@ def audit_log(name, **kwargs):
     message = u'{name}: {payload}'.format(name=name, payload=payload)
 
     log.info(message)
+
+
+class EcommerceService(object):
+
+    def __init__(self):
+        self.config = CommerceConfiguration.current()
+
+    def is_enabled(self):
+        return self.config.checkout_on_ecommerce_service
+
+    def payment_page_url(self):
+        return urljoin(settings.ECOMMERCE_PUBLIC_URL_ROOT, self.config.single_course_checkout_page)

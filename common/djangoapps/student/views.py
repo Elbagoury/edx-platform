@@ -37,10 +37,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.template.response import TemplateResponse
 
-from commerce.models import CommerceConfiguration
-
 from ratelimitbackend.exceptions import RateLimitException
-
 
 from social.apps.django_app import utils as social_utils
 from social.backends import oauth as social_oauth
@@ -48,6 +45,7 @@ from social.exceptions import AuthException, AuthAlreadyAssociated
 
 from edxmako.shortcuts import render_to_response, render_to_string
 
+from commerce.utils import EcommerceService
 from course_modes.models import CourseMode
 from shoppingcart.api import order_history
 from student.models import (
@@ -706,8 +704,6 @@ def dashboard(request):
     else:
         redirect_message = ''
 
-    config = CommerceConfiguration.current()
-
     context = {
         'enrollment_message': enrollment_message,
         'redirect_message': redirect_message,
@@ -740,9 +736,8 @@ def dashboard(request):
         'course_programs': course_programs,
         'disable_courseware_js': True,
         'xseries_credentials': xseries_credentials,
-        'use_ecommerce_payment_flow': config.checkout_on_ecommerce_service,
-        'ecommerce_payment_page': urljoin(settings.ECOMMERCE_PUBLIC_URL_ROOT,
-                                          config.single_course_checkout_page),
+        'use_ecommerce_payment_flow': EcommerceService().is_enabled(),
+        'ecommerce_payment_page': EcommerceService().payment_page_url(),
     }
 
     return render_to_response('dashboard.html', context)
