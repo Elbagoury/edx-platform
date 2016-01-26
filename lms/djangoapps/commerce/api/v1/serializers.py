@@ -9,6 +9,7 @@ from opaque_keys.edx.keys import CourseKey
 from rest_framework import serializers
 
 from commerce.api.v1.models import Course
+from commerce.models import CommerceConfiguration
 from course_modes.models import CourseMode
 
 from xmodule.modulestore.django import modulestore
@@ -112,3 +113,9 @@ class CourseSerializer(serializers.Serializer):
             CourseMode(**modes_dict)
             for modes_dict in modes_data
         ]
+
+
+class CommerceConfigurationSerializer(serializers.ModelSerializer):
+
+    class Meta(object):
+        model = CommerceConfiguration
