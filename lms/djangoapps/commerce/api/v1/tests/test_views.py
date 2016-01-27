@@ -17,6 +17,7 @@ from rest_framework.utils.encoders import JSONEncoder
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.tests.factories import CourseFactory
 
+from commerce.models import CommerceConfiguration
 from commerce.tests import TEST_API_URL, TEST_API_SIGNING_KEY
 from commerce.tests.mocks import mock_order_endpoint
 from commerce.tests.test_views import UserMixin
@@ -391,3 +392,23 @@ class OrderViewTests(UserMixin, TestCase):
         self.client.logout()
         response = self.client.get(self.path)
         self.assertEqual(response.status_code, 403)
+
+
+class CommerceConfigurationTests(TestCase):
+    """ Tests for CommerceConfiguration view. """
+    path = reverse('commerce_api:v1:commerce_configuration:list')
+
+    def setUp(self):
+        self.config = CommerceConfiguration.objects.create(
+            checkout_on_ecommerce_service=True,
+            single_course_checkout_page='/test_basket/'
+        )
+        super(CommerceConfigurationTests, self).setUp()
+
+    def test_serializer(self):
+        """ Verify that proper data is retrieved from the view. """
+        response = self.client.get(self.path)
+        response_data = json.loads(response.content)
+        result = response_data['results'][0]
+        self.assertEqual(result['checkout_on_ecommerce_service'], self.config.checkout_on_ecommerce_service)
+        self.assertEqual(result['single_course_checkout_page'], self.config.single_course_checkout_page)
