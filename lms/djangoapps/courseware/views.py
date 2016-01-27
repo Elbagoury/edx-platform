@@ -881,6 +881,7 @@ def course_about(request, course_id):
                 reg_url=reverse('register_user'), course_id=urllib.quote(str(course_id)))
 
         ecommerce_checkout_link = ''
+        mode = ''
         ecomm_service = EcommerceService()
         if ecomm_service.is_enabled() and (
             'professional' in modes or 'no-id-professional' in modes
@@ -915,6 +916,7 @@ def course_about(request, course_id):
 
         return render_to_response('courseware/course_about.html', {
             'course': course,
+            'mode': mode,
             'staff_access': staff_access,
             'studio_url': studio_url,
             'registered': registered,
