@@ -6,7 +6,7 @@ from commerce.api.v1 import views
 
 COMMERCE_CONFIGURATION_URLS = patterns(
     '',
-    url(r'^$', views.CommerceConfigurationView.as_view(), name='list')
+    url(r'^$', views.CommerceConfigurationView.as_view(), name='commerce_configuration')
 )
 
 COURSE_URLS = patterns(
