@@ -11,8 +11,7 @@ from rest_framework_oauth.authentication import OAuth2Authentication
 
 from commerce.api.v1.models import Course
 from commerce.api.v1.permissions import ApiKeyOrModelPermission
-from commerce.api.v1.serializers import CourseSerializer, CommerceConfigurationSerializer
-from commerce.models import CommerceConfiguration
+from commerce.api.v1.serializers import CourseSerializer
 from course_modes.models import CourseMode
 from openedx.core.djangoapps.commerce.utils import ecommerce_api_client
 from openedx.core.lib.api.mixins import PutAsCreateMixin
@@ -74,8 +73,3 @@ class OrderView(APIView):
             return JsonResponse(order)
         except exceptions.HttpNotFoundError:
             return JsonResponse(status=404)
-
-
-class CommerceConfigurationView(ListAPIView):
-    queryset = CommerceConfiguration.objects.all()
-    serializer_class = CommerceConfigurationSerializer

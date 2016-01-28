@@ -33,6 +33,7 @@ def checkout_error(_request):
 @login_required
 def checkout_receipt(request):
     """ Receipt view. """
+
     page_title = _('Receipt')
     is_payment_complete = True
     payment_support_email = microsite.get_value('payment_support_email', settings.PAYMENT_SUPPORT_EMAIL)
