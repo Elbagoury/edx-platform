@@ -127,15 +127,15 @@ def render_require_js_path_overrides(path_overrides):  # pylint: disable=invalid
     # to RequireJS.
     html.extend([
         'var require = require || RequireJS.require;',
-        'require.paths = require.paths || [];'
+        # 'require.paths = require.paths || [];'
     ])
 
     # Specify override the base URL to point to STATIC_URL
-    html.append(
-        "require.baseUrl = '{url}'".format(
-            url=django_settings.STATIC_URL
-        )
-    )
+    # html.append(
+        # "require.baseUrl = '{url}'".format(
+            # url=django_settings.STATIC_URL
+        # )
+    # )
 
     for module, url_path in path_overrides.iteritems():
         # Calculate the full URL, including any hashes added to the filename by the pipeline.
@@ -150,7 +150,7 @@ def render_require_js_path_overrides(path_overrides):  # pylint: disable=invalid
 
         # Add the path override to the inline JavaScript.
         html.append(
-            "require.paths['{module}'] = '{path}';".format(
+            "require.s.contexts._.config.paths['{module}'] = '{path}';".format(
                 module=module,
                 path=path
             )
