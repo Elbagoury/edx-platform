@@ -69,8 +69,6 @@ urlpatterns = (
 
     url(r'^notifier_api/', include('notifier_api.urls')),
 
-    url(r'^i18n/', include('django.conf.urls.i18n')),
-
     # Feedback Form endpoint
     url(r'^submit_feedback$', 'util.views.submit_feedback'),
 
