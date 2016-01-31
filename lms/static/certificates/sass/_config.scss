@@ -8,7 +8,7 @@
 // ------------------------------
 // #VARIABLES
 // ------------------------------
-$open-sans-font-path: '../../OpenSans';
+$pattern-library-path: '../../pattern-library' !default;
 
 // certificate characteristics
 $cert-base-color: palette(grayscale-cool, dark);
